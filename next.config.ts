@@ -8,6 +8,11 @@ const nextConfig = {
   },
   assetPrefix: process.env.NODE_ENV === 'production' ? '/PWA_Time_Tools/' : '',
   trailingSlash: true,
+  eslint: {
+    // Warnungen während der Entwicklung anzeigen
+    ignoreDuringBuilds: false,
+    dirs: ['src']
+  },
 }
 
 export default nextConfig;
