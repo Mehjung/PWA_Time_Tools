@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  output: 'export',
-  basePath: '/PWA_Time_Tools',
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  basePath: process.env.NODE_ENV === 'production' ? '/PWA_Time_Tools' : '',
   images: {
     unoptimized: true,
   },
-  assetPrefix: '/PWA_Time_Tools/',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/PWA_Time_Tools/' : '',
   trailingSlash: true,
 }
 
