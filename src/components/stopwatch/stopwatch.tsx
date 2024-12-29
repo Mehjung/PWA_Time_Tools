@@ -54,7 +54,6 @@ export function Stopwatch() {
   const addLap = () => {
     const lapNumber = laps.length + 1
     const lapTime = formatTime(time)
-    const previousLapTime = laps[0]?.time || "00:00.00"
     
     // Calculate lap duration
     const currentTimeMs = time
