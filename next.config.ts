@@ -7,6 +7,7 @@ const nextConfig = {
     unoptimized: true,
   },
   assetPrefix: '/PWA_Time_Tools/',
+  trailingSlash: true,
 }
 
 export default nextConfig;
