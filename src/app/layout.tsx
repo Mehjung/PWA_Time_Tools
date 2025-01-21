@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { MainLayout } from "@/components/layout/main-layout";
+import { ClientLayout } from "@/components/layout/client-layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,20 +15,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "PWA Time Tools",
-  description: "Your all-in-one time management solution",
+  description: "Ihre All-in-One Zeitmanagement-Lösung",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout() {
   return (
-    <html lang="en" className="h-full">
+    <html lang="de" className="h-full select-none">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full select-none`}
       >
-        <MainLayout>{children}</MainLayout>
+        <ClientLayout />
       </body>
     </html>
   );
