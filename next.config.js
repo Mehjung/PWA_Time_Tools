@@ -2,7 +2,8 @@
 const nextConfig = {
   output: "export",
   trailingSlash: false,
-  basePath: "",
+  basePath: "/PWA_Time_Tools",
+  assetPrefix: "/PWA_Time_Tools/",
   images: {
     unoptimized: true,
   },
