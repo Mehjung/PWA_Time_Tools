@@ -106,8 +106,8 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="relative h-16">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2">
           <Button
             variant="ghost"
             className="flex items-center gap-2 h-10 px-3 hover:bg-accent/50"
@@ -118,74 +118,75 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
             <span className="text-lg font-semibold whitespace-nowrap">
               Time Tools
             </span>
+            {activePrograms.length > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-2 whitespace-nowrap px-2 py-0 h-6 inline-flex items-center"
+              >
+                {activePrograms.length} Aktiv
+              </Badge>
+            )}
           </Button>
-
-          {activePrograms.length > 0 && (
-            <Badge
-              variant="secondary"
-              className="whitespace-nowrap px-2 py-0 h-6 inline-flex items-center"
-            >
-              {activePrograms.length} Aktiv
-            </Badge>
-          )}
         </div>
 
-        <div className="flex-1 max-w-2xl mx-auto px-4">
-          <div className="relative w-full" ref={containerRef}>
-            <Input
-              ref={inputRef}
-              type="search"
-              placeholder="Programme durchsuchen..."
-              className="w-full bg-muted/50 pl-10 rounded-full h-10 cursor-text select-none focus:cursor-text"
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              onFocus={() => setShowSuggestions(true)}
-              onKeyDown={handleKeyDown}
-              aria-label="Programme durchsuchen"
-              aria-controls="search-suggestions"
-              aria-activedescendant={
-                showSuggestions && selectedIndex >= 0
-                  ? `suggestion-${suggestions[selectedIndex].id}`
-                  : undefined
-              }
-            />
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-              aria-hidden="true"
-            />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="w-[600px]" ref={containerRef}>
+            <div className="relative">
+              <Input
+                ref={inputRef}
+                type="search"
+                placeholder="Programme durchsuchen..."
+                className="w-full bg-muted/50 pl-10 rounded-full h-10 cursor-text select-none focus:cursor-text"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={handleKeyDown}
+                aria-label="Programme durchsuchen"
+                aria-controls="search-suggestions"
+                aria-activedescendant={
+                  showSuggestions && selectedIndex >= 0
+                    ? `suggestion-${suggestions[selectedIndex].id}`
+                    : undefined
+                }
+              />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
 
-            {showSuggestions && suggestions.length > 0 && (
-              <div
-                id="search-suggestions"
-                className="absolute w-full mt-2 bg-background border rounded-lg shadow-lg overflow-hidden"
-                role="listbox"
-                aria-label="Suchvorschläge"
-              >
-                {suggestions.map((program, index) => (
-                  <div
-                    key={program.id}
-                    id={`suggestion-${program.id}`}
-                    className={cn(
-                      "px-4 py-2 cursor-pointer transition-colors flex items-center justify-between",
-                      index === selectedIndex
-                        ? "bg-accent"
-                        : "hover:bg-accent/50"
-                    )}
-                    onClick={() => handleProgramSelect(program)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    role="option"
-                    aria-selected={index === selectedIndex}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium">{program.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {program.description}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  id="search-suggestions"
+                  className="absolute w-full mt-2 bg-background border rounded-lg shadow-lg overflow-hidden"
+                  role="listbox"
+                  aria-label="Suchvorschläge"
+                >
+                  {suggestions.map((program, index) => (
+                    <div
+                      key={program.id}
+                      id={`suggestion-${program.id}`}
+                      className={cn(
+                        "px-4 py-2 cursor-pointer transition-colors flex items-center justify-between",
+                        index === selectedIndex
+                          ? "bg-accent"
+                          : "hover:bg-accent/50"
+                      )}
+                      onClick={() => handleProgramSelect(program)}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      role="option"
+                      aria-selected={index === selectedIndex}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium">{program.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {program.description}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

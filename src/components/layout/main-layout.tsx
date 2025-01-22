@@ -18,14 +18,12 @@ interface Program {
   component: React.ReactNode;
 }
 
-// Mapping der Icons zu den Programmen
 const PROGRAM_ICONS = {
   stopwatch: <Clock className="w-6 h-6" />,
   timer: <TimerIcon className="w-6 h-6" />,
   worldclock: <Globe className="w-6 h-6" />,
 } as const;
 
-// Mapping der Komponenten zu den Programmen
 const PROGRAM_COMPONENTS = {
   stopwatch: <Stopwatch />,
   timer: <Timer />,
@@ -45,7 +43,6 @@ export function MainLayout() {
   const { state, activateProgramId } = useProgramState();
   const isInitialMount = useRef(true);
 
-  // Hash-basierte Navigation
   useEffect(() => {
     function handleHashChange() {
       const hash = window.location.hash.slice(1);
@@ -58,7 +55,6 @@ export function MainLayout() {
       }
     }
 
-    // Nur beim ersten Mount den Hash überprüfen
     if (isInitialMount.current) {
       handleHashChange();
       isInitialMount.current = false;
@@ -92,12 +88,15 @@ export function MainLayout() {
   const handleProgramClick = useCallback(
     (programId: ProgramId) => {
       if (programId !== state.activeProgram) {
-        window.location.hash =
-          programId === "worldclock" ? "world-clock" : programId;
+        activateProgramId(programId);
+        requestAnimationFrame(() => {
+          window.location.hash =
+            programId === "worldclock" ? "world-clock" : programId;
+        });
       }
       setShowPrograms(false);
     },
-    [state.activeProgram]
+    [state.activeProgram, activateProgramId]
   );
 
   const activeComponent = useMemo(() => {
@@ -116,31 +115,34 @@ export function MainLayout() {
       </div>
 
       <main className="container mx-auto px-4 py-6" role="main">
-        <div className="bg-card rounded-xl shadow-sm">
+        <div className="bg-card rounded-xl shadow-sm min-h-[calc(100vh-8rem)]">
           {showPrograms ? (
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 gap-6 p-6">
-                <div
-                  className="grid grid-cols-1 gap-6 max-w-4xl mx-auto w-full"
-                  role="menu"
-                  aria-label="Programme"
-                >
-                  {programs.map((program) => (
-                    <ProgramCard
-                      key={program.id}
-                      title={program.title}
-                      description={program.description}
-                      icon={program.icon}
-                      onClick={() => handleProgramClick(program.id)}
-                      isActive={program.id === state.activeProgram}
-                      isRunning={
-                        program.id !== "worldclock" &&
-                        isProgramRunning(program.id)
-                      }
-                      role="menuitem"
-                      aria-current={program.id === state.activeProgram}
-                    />
-                  ))}
+            <div className="h-full flex flex-col">
+              {/* Angepasster Bereich für tiefere Positionierung */}
+              <div className="flex-1 flex items-start justify-center pt-16 pb-8">
+                <div className="max-w-sm mx-auto w-full px-4">
+                  <div
+                    className="grid grid-cols-1 gap-4 mt-8"
+                    role="menu"
+                    aria-label="Programme"
+                  >
+                    {programs.map((program) => (
+                      <ProgramCard
+                        key={program.id}
+                        title={program.title}
+                        description={program.description}
+                        icon={program.icon}
+                        onClick={() => handleProgramClick(program.id)}
+                        isActive={program.id === state.activeProgram}
+                        isRunning={
+                          program.id !== "worldclock" &&
+                          isProgramRunning(program.id)
+                        }
+                        role="menuitem"
+                        aria-current={program.id === state.activeProgram}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

@@ -15,14 +15,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement;
 };
 
-type ActionType = {
-  ADD_TOAST: "ADD_TOAST";
-  UPDATE_TOAST: "UPDATE_TOAST";
-  DISMISS_TOAST: "DISMISS_TOAST";
-  REMOVE_TOAST: "REMOVE_TOAST";
-};
-
-const actionType: ActionType = {
+const actionType = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
   DISMISS_TOAST: "DISMISS_TOAST",
@@ -38,19 +31,19 @@ function genId() {
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"];
+      type: typeof actionType.ADD_TOAST;
       toast: ToasterToast;
     }
   | {
-      type: ActionType["UPDATE_TOAST"];
+      type: typeof actionType.UPDATE_TOAST;
       toast: Partial<ToasterToast>;
     }
   | {
-      type: ActionType["DISMISS_TOAST"];
+      type: typeof actionType.DISMISS_TOAST;
       toastId?: ToasterToast["id"];
     }
   | {
-      type: ActionType["REMOVE_TOAST"];
+      type: typeof actionType.REMOVE_TOAST;
       toastId?: ToasterToast["id"];
     };
 
@@ -83,7 +76,6 @@ export const reducer = (state: State, action: Action): State => {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       };
-
     case actionType.UPDATE_TOAST:
       return {
         ...state,
@@ -91,12 +83,8 @@ export const reducer = (state: State, action: Action): State => {
           t.id === action.toast.id ? { ...t, ...action.toast } : t
         ),
       };
-
-    case actionType.DISMISS_TOAST: {
+    case actionType.DISMISS_TOAST:
       const { toastId } = action;
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId);
       } else {
@@ -104,7 +92,6 @@ export const reducer = (state: State, action: Action): State => {
           addToRemoveQueue(toast.id);
         });
       }
-
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -116,7 +103,6 @@ export const reducer = (state: State, action: Action): State => {
             : t
         ),
       };
-    }
     case actionType.REMOVE_TOAST:
       if (action.toastId === undefined) {
         return {
