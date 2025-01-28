@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { type FC, useState, useEffect, memo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -59,34 +59,58 @@ const TIME_FORMAT: Intl.DateTimeFormatOptions = {
   hour12: false,
 };
 
-type TimeZone = (typeof timeZones)[number]["zone"];
-
-export function WorldClock() {
-  const [times, setTimes] = useState<Record<TimeZone, string>>(
-    {} as Record<TimeZone, string>
-  );
-
-  const updateTimes = useCallback(() => {
-    const now = new Date();
-    const newTimes = Object.fromEntries(
-      timeZones.map(({ zone }) => [
-        zone,
-        new Intl.DateTimeFormat("de-DE", {
-          ...TIME_FORMAT,
-          timeZone: zone,
-        }).format(now),
-      ])
-    ) as Record<TimeZone, string>;
-
-    setTimes(newTimes);
-  }, []);
+// Memoisierte TimeDisplay Komponente
+const TimeDisplay = memo(({ zone }: { zone: string }) => {
+  const [time, setTime] = useState("--:--:--");
 
   useEffect(() => {
-    updateTimes();
-    const interval = setInterval(updateTimes, 1000);
-    return () => clearInterval(interval);
-  }, [updateTimes]);
+    const updateTime = () => {
+      const now = new Date();
+      const formatted = new Intl.DateTimeFormat("de-DE", {
+        ...TIME_FORMAT,
+        timeZone: zone,
+      }).format(now);
+      setTime(formatted);
+    };
 
+    updateTime(); // Initial update
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [zone]);
+
+  return <span className="font-mono text-base tabular-nums">{time}</span>;
+});
+
+TimeDisplay.displayName = "TimeDisplay";
+
+// Memoisierte ClockCard Komponente
+const ClockCard = memo(({ zone }: { zone: TimeZoneConfig }) => (
+  <Card className="overflow-hidden hover:shadow-md transition-all group border bg-accent/5 hover:bg-accent/10 min-h-[96px]">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-background text-foreground border border-border/50 group-hover:border-primary/30 transition-colors">
+          <Clock className="w-6 h-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-base font-medium truncate">{zone.name}</h3>
+            <Badge variant="outline" className="px-2 py-0.5 text-xs shrink-0">
+              {zone.region}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm text-muted-foreground">{zone.label}</span>
+            <TimeDisplay zone={zone.zone} />
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+));
+
+ClockCard.displayName = "ClockCard";
+
+const WorldClock: FC = () => {
   return (
     <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="pb-2">
@@ -102,43 +126,13 @@ export function WorldClock() {
         <ScrollArea className="h-[calc(100vh-12rem)] pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {timeZones.map((zone) => (
-              <Card
-                key={zone.zone}
-                className="overflow-hidden hover:shadow-md transition-all group border bg-accent/5 hover:bg-accent/10 min-h-[96px]"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-background text-foreground border border-border/50 group-hover:border-primary/30 transition-colors">
-                      <Clock className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-base font-medium truncate">
-                          {zone.name}
-                        </h3>
-                        <Badge
-                          variant="outline"
-                          className="px-2 py-0.5 text-xs shrink-0"
-                        >
-                          {zone.region}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-sm text-muted-foreground">
-                          {zone.label}
-                        </span>
-                        <span className="font-mono text-base tabular-nums">
-                          {times[zone.zone] || "--:--:--"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <ClockCard key={zone.zone} zone={zone} />
             ))}
           </div>
         </ScrollArea>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default WorldClock;

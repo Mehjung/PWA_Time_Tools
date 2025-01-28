@@ -8,71 +8,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface TimeComponents {
-  minutes: number;
-  seconds: number;
-  centiseconds?: number;
+/**
+ * Formatiert eine Zeit in Millisekunden als "mm:ss.ms"
+ */
+export function formatStopwatch(time: number): string {
+  const minutes = Math.floor(time / 6000);
+  const seconds = Math.floor((time % 6000) / 100);
+  const hundredths = time % 100;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}.${hundredths.toString().padStart(2, "0")}`;
 }
 
 /**
- * Formatiert eine Anzahl von Sekunden in ein Timer-Format (MM:SS)
- * @param seconds - Die zu formatierende Zeit in Sekunden
- * @returns Formatierte Zeit im Format "MM:SS"
+ * Formatiert eine Zeit in Sekunden als "mm:ss"
  */
-export function formatTimer(seconds: number): string {
-  if (seconds < 0) return "00:00";
+export function formatTimer(time: number): string {
+  const minutes = Math.floor(time / 60);
+  const seconds = time % 60;
 
-  const components = getTimeComponents(seconds);
-  return formatTimeComponents(components);
-}
-
-/**
- * Formatiert Millisekunden in ein Stoppuhr-Format (MM:SS.CC)
- * @param ms - Die zu formatierende Zeit in Hundertstelsekunden
- * @returns Formatierte Zeit im Format "MM:SS.CC"
- */
-export function formatStopwatch(ms: number): string {
-  if (ms < 0) return "00:00.00";
-
-  const components = getTimeComponents(Math.floor(ms / 100), ms % 100);
-  return formatTimeComponents(components, true);
-}
-
-/**
- * Berechnet die Zeitkomponenten aus Sekunden
- * @param totalSeconds - Gesamtzeit in Sekunden
- * @param centiseconds - Optionale Hundertstelsekunden
- */
-function getTimeComponents(
-  totalSeconds: number,
-  centiseconds?: number
-): TimeComponents {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return {
-    minutes,
-    seconds,
-    ...(centiseconds !== undefined && { centiseconds }),
-  };
-}
-
-/**
- * Formatiert Zeitkomponenten in einen String
- * @param components - Die zu formatierenden Zeitkomponenten
- * @param withCentiseconds - Ob Hundertstelsekunden angezeigt werden sollen
- */
-function formatTimeComponents(
-  { minutes, seconds, centiseconds }: TimeComponents,
-  withCentiseconds = false
-): string {
-  const minutesStr = minutes.toString().padStart(2, "0");
-  const secondsStr = seconds.toString().padStart(2, "0");
-
-  if (!withCentiseconds) {
-    return `${minutesStr}:${secondsStr}`;
-  }
-
-  const centisecondsStr = (centiseconds ?? 0).toString().padStart(2, "0");
-  return `${minutesStr}:${secondsStr}.${centisecondsStr}`;
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
 }

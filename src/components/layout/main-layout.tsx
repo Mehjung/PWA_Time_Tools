@@ -1,109 +1,148 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { Clock, Timer as TimerIcon, Globe } from "lucide-react";
-import { ProgramCard } from "../program-card";
-import { Stopwatch } from "../stopwatch/stopwatch";
-import { Timer } from "../timer/timer";
-import { WorldClock } from "../world-clock/world-clock";
-import { useProgramState } from "@/contexts/program-state";
-import { PROGRAMS, type ProgramId } from "@/lib/program-config";
+import { useState, useCallback, useEffect } from "react";
 import { Header } from "./header";
+import { ProgramCard } from "../program-card";
+import {
+  PROGRAMS,
+  type ProgramId,
+  type RunnableProgram,
+} from "@/lib/program-config";
+import { useProgramStore } from "@/stores/program-store";
 
-interface Program {
-  id: ProgramId;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  component: React.ReactNode;
-}
-
-const PROGRAM_ICONS = {
-  stopwatch: <Clock className="w-6 h-6" />,
-  timer: <TimerIcon className="w-6 h-6" />,
-  worldclock: <Globe className="w-6 h-6" />,
-} as const;
-
-const PROGRAM_COMPONENTS = {
-  stopwatch: <Stopwatch />,
-  timer: <Timer />,
-  worldclock: <WorldClock />,
-} as const;
-
-const programs: Program[] = PROGRAMS.map((program) => ({
-  id: program.id as ProgramId,
-  title: program.name,
-  description: program.description,
-  icon: PROGRAM_ICONS[program.id as ProgramId],
-  component: PROGRAM_COMPONENTS[program.id as ProgramId],
-}));
-
-export function MainLayout() {
+export const MainLayout = () => {
   const [showPrograms, setShowPrograms] = useState(false);
-  const { state, activateProgramId } = useProgramState();
-  const isInitialMount = useRef(true);
+  const { activeProgram, runningPrograms, setActiveProgram } =
+    useProgramStore();
+  const activeConfig = activeProgram
+    ? PROGRAMS.find((p) => p.id === activeProgram)
+    : null;
 
+  // Memoisiere die onRunningChange-Funktion
+  const onRunningChange = useCallback(
+    (isRunning: boolean) => {
+      if (!activeConfig?.supportsRunning) return;
+      console.log("DEBUG: MainLayout onRunningChange", {
+        programId: activeConfig.id,
+        isRunning,
+        currentRunningPrograms: runningPrograms,
+      });
+      useProgramStore.getState().getRunningCallback(activeConfig.id)(isRunning);
+    },
+    [activeConfig?.id, activeConfig?.supportsRunning, runningPrograms]
+  );
+
+  // Initialer Running-State Check für alle Programme
   useEffect(() => {
-    function handleHashChange() {
-      const hash = window.location.hash.slice(1);
-      if (hash) {
-        const programId = hash.replace(/-/g, "") as ProgramId;
-        if (programId !== state.activeProgram) {
-          activateProgramId(programId);
-          setShowPrograms(false);
+    PROGRAMS.forEach((program) => {
+      if (program.supportsRunning) {
+        const runnableProgram = program as RunnableProgram;
+        if (typeof runnableProgram.checkInitialRunning === "function") {
+          console.log(
+            "DEBUG: MainLayout initial running check for:",
+            program.id
+          );
+          const isRunning = runnableProgram.checkInitialRunning();
+          if (isRunning) {
+            console.log(
+              "DEBUG: MainLayout setting initial running state for:",
+              program.id
+            );
+            useProgramStore.getState().getRunningCallback(program.id)(true);
+          }
         }
       }
-    }
+    });
+  }, []); // Nur beim Mounting ausführen
 
-    if (isInitialMount.current) {
-      handleHashChange();
-      isInitialMount.current = false;
-    }
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, [activateProgramId, state.activeProgram]);
-
-  const isProgramRunning = useCallback(
+  // Funktion zum Aktivieren eines Programms und Schließen der Programmauswahl
+  const handleProgramActivation = useCallback(
     (programId: ProgramId) => {
-      switch (programId) {
-        case "timer":
-          return state.timer.isRunning;
-        case "stopwatch":
-          return state.stopwatch.isRunning;
-        default:
-          return false;
-      }
-    },
-    [state.timer.isRunning, state.stopwatch.isRunning]
-  );
+      console.log("DEBUG: MainLayout handleProgramActivation", {
+        programId,
+        currentShowPrograms: showPrograms,
+      });
 
-  const runningPrograms = useMemo(() => {
-    const running: ProgramId[] = [];
-    if (state.timer.isRunning) running.push("timer");
-    if (state.stopwatch.isRunning) running.push("stopwatch");
-    return running;
-  }, [state.timer.isRunning, state.stopwatch.isRunning]);
-
-  const handleProgramClick = useCallback(
-    (programId: ProgramId) => {
-      if (programId !== state.activeProgram) {
-        activateProgramId(programId);
-        requestAnimationFrame(() => {
-          window.location.hash =
-            programId === "worldclock" ? "world-clock" : programId;
-        });
-      }
       setShowPrograms(false);
+      setActiveProgram(programId);
     },
-    [state.activeProgram, activateProgramId]
+    [setShowPrograms, setActiveProgram, showPrograms]
   );
 
-  const activeComponent = useMemo(() => {
-    if (!state.activeProgram) return null;
-    const program = programs.find((p) => p.id === state.activeProgram);
-    return program?.component || null;
-  }, [state.activeProgram]);
+  // Diese Funktion dem Header übergeben
+  const handleHeaderProgramSelect = useCallback(
+    (programId: ProgramId) => {
+      handleProgramActivation(programId);
+    },
+    [handleProgramActivation]
+  );
+
+  const renderContent = () => {
+    console.log("DEBUG: MainLayout renderContent", {
+      activeProgram,
+      showPrograms,
+      activeConfig: activeConfig?.id,
+    });
+
+    // Wenn kein Programm aktiv ist und keine Programme angezeigt werden -> Willkommensseite
+    if (!activeProgram && !showPrograms) {
+      return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-16rem)]">
+          <div className="max-w-4xl w-full p-8">
+            <div className="text-center space-y-4" role="status">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Willkommen bei Time Tools
+              </h2>
+              <p className="text-muted-foreground">
+                Wählen Sie ein Programm aus dem Menü aus, um zu beginnen
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Programme anzeigen
+    if (showPrograms) {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="flex-1 flex items-start justify-center pt-16 pb-8">
+            <div className="max-w-sm mx-auto w-full px-4">
+              <div
+                className="grid grid-cols-1 gap-4 mt-8"
+                role="menu"
+                aria-label="Programme"
+              >
+                {PROGRAMS.map((program) => (
+                  <ProgramCard
+                    key={program.id}
+                    title={program.name}
+                    description={program.description}
+                    icon={program.icon}
+                    isActive={program.id === activeProgram}
+                    isRunning={runningPrograms.includes(program.id)}
+                    onClick={() => {
+                      handleProgramActivation(program.id);
+                    }}
+                    role="menuitem"
+                    aria-current={program.id === activeProgram}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Aktives Programm anzeigen
+    if (!activeConfig) return null;
+    return activeConfig.supportsRunning ? (
+      <activeConfig.component onRunningChange={onRunningChange} />
+    ) : (
+      <activeConfig.component />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,59 +150,15 @@ export function MainLayout() {
         <Header
           onProgramsClick={() => setShowPrograms((prev) => !prev)}
           activePrograms={runningPrograms}
+          onProgramSelect={handleHeaderProgramSelect}
         />
       </div>
 
       <main className="container mx-auto px-4 py-6" role="main">
         <div className="bg-card rounded-xl shadow-sm min-h-[calc(100vh-8rem)]">
-          {showPrograms ? (
-            <div className="h-full flex flex-col">
-              {/* Angepasster Bereich für tiefere Positionierung */}
-              <div className="flex-1 flex items-start justify-center pt-16 pb-8">
-                <div className="max-w-sm mx-auto w-full px-4">
-                  <div
-                    className="grid grid-cols-1 gap-4 mt-8"
-                    role="menu"
-                    aria-label="Programme"
-                  >
-                    {programs.map((program) => (
-                      <ProgramCard
-                        key={program.id}
-                        title={program.title}
-                        description={program.description}
-                        icon={program.icon}
-                        onClick={() => handleProgramClick(program.id)}
-                        isActive={program.id === state.activeProgram}
-                        isRunning={
-                          program.id !== "worldclock" &&
-                          isProgramRunning(program.id)
-                        }
-                        role="menuitem"
-                        aria-current={program.id === state.activeProgram}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center min-h-[calc(100vh-16rem)]">
-              <div className="max-w-4xl w-full p-8">
-                {activeComponent || (
-                  <div className="text-center space-y-4" role="status">
-                    <h2 className="text-2xl font-semibold text-foreground">
-                      Willkommen bei Time Tools
-                    </h2>
-                    <p className="text-muted-foreground">
-                      Wählen Sie ein Programm aus dem Menü aus, um zu beginnen
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {renderContent()}
         </div>
       </main>
     </div>
   );
-}
+};

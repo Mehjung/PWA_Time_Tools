@@ -4,11 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { type HTMLAttributes } from "react";
+import { type LucideIcon } from "lucide-react";
 
 interface ProgramCardProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   onClick: () => void;
   isActive?: boolean;
   isRunning?: boolean;
@@ -17,7 +18,7 @@ interface ProgramCardProps extends HTMLAttributes<HTMLDivElement> {
 export function ProgramCard({
   title,
   description,
-  icon,
+  icon: Icon,
   onClick,
   isActive,
   isRunning,
@@ -35,6 +36,8 @@ export function ProgramCard({
         className
       )}
       onClick={onClick}
+      role="menuitem"
+      aria-current={isActive}
       {...props}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -55,7 +58,7 @@ export function ProgramCard({
           <div className="[&>svg]:size-7 [&>svg]:transition-colors">
             {" "}
             {/* Icon vergrößert */}
-            {icon}
+            <Icon className="h-6 w-6" aria-hidden="true" />
           </div>
         </div>
         <div className="flex-1 min-w-0 space-y-1.5 h-full flex flex-col justify-center">

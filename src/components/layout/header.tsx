@@ -1,70 +1,88 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AppWindow, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Program, searchPrograms } from "@/lib/program-config";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useProgramState } from "@/contexts/program-state";
+import {
+  type ProgramConfig,
+  type ProgramId,
+  searchPrograms,
+} from "@/lib/program-config";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 
 interface HeaderProps {
   onProgramsClick: () => void;
-  activePrograms: string[];
+  activePrograms: ProgramId[];
+  onProgramSelect: (programId: ProgramId) => void;
 }
 
-export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
+export const Header = ({
+  onProgramsClick,
+  activePrograms,
+  onProgramSelect,
+}: HeaderProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState<Program[]>([]);
+  const [suggestions, setSuggestions] = useState<ProgramConfig[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { activateProgramId } = useProgramState();
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false);
-        setSelectedIndex(-1);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+      return;
+    }
     const results = searchPrograms(value);
     setSuggestions(results);
-    setShowSuggestions(true);
+    setShowSuggestions(results.length > 0);
     setSelectedIndex(results.length > 0 ? 0 : -1);
   }, []);
 
-  const handleProgramSelect = useCallback(
-    (program: Program) => {
+  const handleProgramClick = useCallback(
+    (program: ProgramConfig) => {
+      if (!program) {
+        console.log("DEBUG: Program is undefined");
+        return;
+      }
+
+      console.log("DEBUG: Handling program click", {
+        programId: program.id,
+        programName: program.name,
+        supportsRunning: program.supportsRunning,
+      });
+
+      // Erst alle States zurücksetzen
+      setSuggestions([]);
       setSearchTerm("");
       setShowSuggestions(false);
       setSelectedIndex(-1);
       inputRef.current?.blur();
-      activateProgramId(program.id);
-      window.location.hash = program.path.slice(1);
+
+      // Dann das Programm aktivieren über die neue Funktion
+      console.log("DEBUG: Calling onProgramSelect with:", program.id);
+      onProgramSelect(program.id);
     },
-    [activateProgramId]
+    [onProgramSelect]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (!showSuggestions && e.key === "Enter" && searchTerm.trim()) {
         const results = searchPrograms(searchTerm);
+        console.log("DEBUG: Search results on Enter", {
+          searchTerm,
+          resultsCount: results.length,
+          firstResult: results[0],
+        });
         if (results.length > 0) {
           e.preventDefault();
-          handleProgramSelect(results[0]);
+          handleProgramClick(results[0]);
           return;
         }
       }
@@ -84,13 +102,21 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
           break;
         case "Enter":
           e.preventDefault();
+          console.log("DEBUG: Enter pressed with suggestions", {
+            selectedIndex,
+            suggestionsCount: suggestions.length,
+            selectedProgram: suggestions[selectedIndex],
+          });
           if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            handleProgramSelect(suggestions[selectedIndex]);
+            handleProgramClick(suggestions[selectedIndex]);
           }
           break;
         case "Escape":
+          e.preventDefault();
           setShowSuggestions(false);
           setSelectedIndex(-1);
+          setSuggestions([]);
+          setSearchTerm("");
           inputRef.current?.blur();
           break;
       }
@@ -100,9 +126,25 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
       searchTerm,
       suggestions,
       selectedIndex,
-      handleProgramSelect,
+      handleProgramClick,
     ]
   );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -139,7 +181,15 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
                 className="w-full bg-muted/50 pl-10 rounded-full h-10 cursor-text select-none focus:cursor-text"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => setShowSuggestions(true)}
+                onFocus={() => {
+                  if (searchTerm.trim()) {
+                    setShowSuggestions(true);
+                  } else {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                    setSelectedIndex(-1);
+                  }
+                }}
                 onKeyDown={handleKeyDown}
                 aria-label="Programme durchsuchen"
                 aria-controls="search-suggestions"
@@ -171,7 +221,7 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
                           ? "bg-accent"
                           : "hover:bg-accent/50"
                       )}
-                      onClick={() => handleProgramSelect(program)}
+                      onClick={() => handleProgramClick(program)}
                       onMouseEnter={() => setSelectedIndex(index)}
                       role="option"
                       aria-selected={index === selectedIndex}
@@ -192,4 +242,4 @@ export function Header({ onProgramsClick, activePrograms }: HeaderProps) {
       </div>
     </header>
   );
-}
+};

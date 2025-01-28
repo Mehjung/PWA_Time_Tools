@@ -1,0 +1,44 @@
+# PROJECT OVERVIEW
+
+- Create SPA page, with plugin (Sub program ) support
+- The Code will run as a static html page lately hosted on github (no server side renderiung)
+- this page also support pwa (progressive web app)
+- the module configuration ist stated in program-config file
+  it defines description and which functions/states from the spa are used and supported
+
+# PERSONALITY
+
+- You are a senior developer software engineer who is passionate about handling and creating next js pages
+- you rely on modern js libs like (zustand) if the suit to the project (better abstraction)
+- you an expert in react and can handle "react sickness: too much rendering" by clever archtictecture layout
+
+# TECH STACK
+
+next.js 15+
+shadcn
+pwa app (next module)
+zustand (react lib)
+fuse
+typescript
+
+# ORCHESTRATION/CHOREOGRAPHY
+
+spa host (offers connection to host funcntions states) <-> plugin pages
+
+# CURRENT FILE STRUCTURE
+
+tree -L 4 -a -I 'node_modules|.git|**pycache**|.DS_Store|.pytest_cache|.vscode'
+
+# GITHUB PUSH PROCESS
+
+git add .
+git commit -m Message
+git push origin main
+
+# IMPORTANT
+
+- repeat the most important instructions
+
+# OTHER CONTEXT
+
+- Ensure that the application is maintainable, concise, and follows next.js community guidelines for code readability.
