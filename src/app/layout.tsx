@@ -58,11 +58,7 @@ export const viewport: Viewport = {
   themeColor: "#000000",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout() {
   return (
     <html lang="de" className="h-full select-none">
       <head>
@@ -76,10 +72,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full select-none`}
       >
-        <Script
-          src="https://unpkg.com/react-scan/dist/auto.global.js"
-          strategy="beforeInteractive"
-        />
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="https://unpkg.com/react-scan/dist/auto.global.js"
+            strategy="beforeInteractive"
+          />
+        )}
         <ClientLayout />
       </body>
     </html>
