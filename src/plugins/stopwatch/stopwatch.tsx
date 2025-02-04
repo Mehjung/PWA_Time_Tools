@@ -102,4 +102,5 @@ const StopwatchComponent: FC<PluginProps> = ({ running }) => {
 
 // Export the memoized StopwatchComponent as Stopwatch
 export const Stopwatch = memo(StopwatchComponent);
+
 Stopwatch.displayName = "Stopwatch";

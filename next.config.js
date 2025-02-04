@@ -1,5 +1,4 @@
 import withSerwistInit from "@serwist/next";
-import million from "million/compiler";
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -16,9 +15,5 @@ const nextConfig = {
     unoptimized: true,
   },
 };
-const millionConfig = {
-  auto: true, // if you're using RSC: auto: { rsc: true },
-};
 
-const exp = million.next(nextConfig, millionConfig);
-export default withSerwist(exp);
+export default withSerwist(nextConfig);

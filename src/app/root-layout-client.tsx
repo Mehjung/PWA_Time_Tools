@@ -1,6 +1,6 @@
+// use client
 // src/components/layout/root-layout-client.tsx
-"use client";
-// million-ignore
+
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { ClientLayout } from "@/components/layout/client-layout";
