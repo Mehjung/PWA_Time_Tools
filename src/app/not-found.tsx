@@ -1,3 +1,4 @@
+// million-ignore
 "use client";
 
 import { useEffect } from "react";

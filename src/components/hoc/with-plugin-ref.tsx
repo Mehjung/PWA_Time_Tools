@@ -1,3 +1,5 @@
+"use client";
+
 // withPluginRef.tsx
 import React, { forwardRef, useImperativeHandle, useEffect } from "react";
 import usePluginStore from "../../stores/plugin-store";
