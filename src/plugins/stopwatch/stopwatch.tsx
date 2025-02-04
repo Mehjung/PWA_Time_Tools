@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { formatTimer } from "@/lib/utils";
-import { useStopwatchStore } from "@/stores/stopwatch-store";
+import { useStopwatchStore } from "./stopwatch-store";
+import { PluginProps } from "@/components/hoc/with-plugin-ref";
 
 // ========================= Time Display Component =========================
 const TimeDisplay = memo(() => {
@@ -74,17 +75,14 @@ const ControlButtons = memo(() => {
 });
 ControlButtons.displayName = "ControlButtons";
 
-interface StopwatchProps {
-  onRunningChange: (isRunning: boolean) => void;
-}
-
 // ========================= Main Stopwatch Component =========================
-const StopwatchComponent: FC<StopwatchProps> = ({ onRunningChange }) => {
+const StopwatchComponent: FC<PluginProps> = ({ running }) => {
   const isRunning = useStopwatchStore((state) => state.isRunning);
+  const [, setRunning] = running;
 
   useEffect(() => {
-    onRunningChange(isRunning);
-  }, [isRunning, onRunningChange]);
+    setRunning(isRunning);
+  }, [isRunning, setRunning]);
 
   return (
     <Card>

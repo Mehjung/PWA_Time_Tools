@@ -1,6 +1,6 @@
 "use client";
 
-import { type FC, useState, useEffect, memo } from "react";
+import React, { FC, useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -59,8 +59,7 @@ const TIME_FORMAT: Intl.DateTimeFormatOptions = {
   hour12: false,
 };
 
-// Memoisierte TimeDisplay Komponente
-const TimeDisplay = memo(({ zone }: { zone: string }) => {
+const TimeDisplay: FC<{ zone: string }> = ({ zone }) => {
   const [time, setTime] = useState("--:--:--");
 
   useEffect(() => {
@@ -73,18 +72,15 @@ const TimeDisplay = memo(({ zone }: { zone: string }) => {
       setTime(formatted);
     };
 
-    updateTime(); // Initial update
+    updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [zone]);
 
   return <span className="font-mono text-base tabular-nums">{time}</span>;
-});
+};
 
-TimeDisplay.displayName = "TimeDisplay";
-
-// Memoisierte ClockCard Komponente
-const ClockCard = memo(({ zone }: { zone: TimeZoneConfig }) => (
+const ClockCard: FC<{ zone: TimeZoneConfig }> = ({ zone }) => (
   <Card className="overflow-hidden hover:shadow-md transition-all group border bg-accent/5 hover:bg-accent/10 min-h-[96px]">
     <CardContent className="p-4">
       <div className="flex items-center gap-4">
@@ -106,11 +102,9 @@ const ClockCard = memo(({ zone }: { zone: TimeZoneConfig }) => (
       </div>
     </CardContent>
   </Card>
-));
+);
 
-ClockCard.displayName = "ClockCard";
-
-const WorldClock: FC = () => {
+const WorldClockComponent: FC = () => {
   return (
     <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="pb-2">
@@ -135,4 +129,4 @@ const WorldClock: FC = () => {
   );
 };
 
-export default WorldClock;
+export const WorldClock = WorldClockComponent;

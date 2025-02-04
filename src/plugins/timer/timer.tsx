@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Timer as TimerIcon } from "lucide-react";
 import { formatTimer } from "@/lib/utils";
-import { useTimerStore } from "@/stores/timer-store";
+import { useTimerStore } from "./timer-store";
+import { PluginProps } from "@/components/hoc/with-plugin-ref";
 
 // ========================= Time Presets =========================
 const TIME_PRESETS = [
@@ -166,17 +167,14 @@ const ControlButtons = memo(() => {
 });
 ControlButtons.displayName = "ControlButtons";
 
-interface TimerProps {
-  onRunningChange: (isRunning: boolean) => void;
-}
-
 // ========================= Main Timer Component =========================
-const TimerComponent: FC<TimerProps> = ({ onRunningChange }) => {
+const TimerComponent: FC<PluginProps> = ({ running }) => {
   const isRunning = useTimerStore((state) => state.isRunning);
+  const [, setRunning] = running;
 
   useEffect(() => {
-    onRunningChange(isRunning);
-  }, [isRunning, onRunningChange]);
+    setRunning(isRunning);
+  }, [isRunning, setRunning]);
 
   return (
     <Card>

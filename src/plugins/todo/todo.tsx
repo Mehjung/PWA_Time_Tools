@@ -7,23 +7,21 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X, ListTodo, Plus } from "lucide-react";
 import { TodoForm } from "./todo-form";
-import { useTodoStore, type TodoItem } from "@/stores/todo-store";
-
-interface TodoProps {
-  onRunningChange: (isRunning: boolean) => void;
-}
+import { useTodoStore, type TodoItem } from "./todo-store";
+import { PluginProps } from "@/components/hoc/with-plugin-ref";
 
 // Exportiere die Funktion für den initialen Check
-export const checkInitialRunning = () => {
+export const onPluginPreMount = () => {
   console.log("DEBUG: Todo checkInitialRunning called");
   const hasActive = useTodoStore.getState().hasActiveTodos();
   console.log("DEBUG: Todo initial running state:", hasActive);
   return hasActive;
 };
 
-export const Todo: FC<TodoProps> = ({ onRunningChange }) => {
+export const Todo: FC<PluginProps> = ({ running }) => {
   const { todos, addTodo, toggleTodo, removeTodo, hasActiveTodos } =
     useTodoStore();
+  const [, setRunning] = running;
 
   // Aktualisiere Running-Status wenn sich Todos ändern
   useEffect(() => {
@@ -34,8 +32,8 @@ export const Todo: FC<TodoProps> = ({ onRunningChange }) => {
 
     // Nur den Running-Status ändern, wenn er sich wirklich geändert hat
     const isRunning = hasActiveTodos();
-    onRunningChange(isRunning);
-  }, [todos, onRunningChange, hasActiveTodos]);
+    setRunning(isRunning);
+  }, [todos, setRunning, hasActiveTodos]);
 
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedTodos = todos.filter((todo) => todo.completed);

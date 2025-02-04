@@ -1,74 +1,59 @@
 "use client";
 
-import Fuse from "fuse.js";
-import { Globe, ListTodo } from "lucide-react";
-import { Timer as TimerIcon, StopCircle as StopwatchIcon } from "lucide-react";
-import type { ComponentType } from "react";
+import { Globe, StopCircle, Timer as TimerIcon, ListTodo } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Timer } from "@/components/timer/timer";
-import { Stopwatch } from "@/components/stopwatch/stopwatch";
-import WorldClock from "@/components/world-clock/world-clock";
-import { Todo, checkInitialRunning } from "@/components/todo/todo";
-
-interface BaseProgram {
+import type { ComponentType } from "react";
+import { Stopwatch } from "@/plugins/stopwatch/stopwatch";
+import { Timer } from "@/plugins/timer/timer";
+import { Todo, onPluginPreMount } from "@/plugins/todo/todo";
+import { WorldClock } from "@/plugins/worldclock/worldclock";
+import type { PluginProps } from "@/components/hoc/with-plugin-ref";
+// Basis Plugin-Typ
+export interface PluginConfig<P = PluginProps> {
   id: string;
   name: string;
   description: string;
-  path: string;
-  keywords: readonly string[];
   icon: LucideIcon;
+  keywords: string[];
+  component: ComponentType<P>;
+  persistent?: boolean;
+  onPluginPreMount?: () => boolean;
 }
 
-export interface RunnableProgram extends BaseProgram {
-  supportsRunning: true;
-  component: ComponentType<{ onRunningChange: (isRunning: boolean) => void }>;
-  checkInitialRunning?: () => boolean;
-}
-
-interface StaticProgram extends BaseProgram {
-  supportsRunning: false;
-  component: ComponentType<Record<string, never>>;
-}
-
-export type Program = RunnableProgram | StaticProgram;
-
-// Die Programme als Konstante definieren
-const PROGRAM_CONFIGS = [
+// Plugin-Konfigurationen
+export const PLUGINS: PluginConfig[] = [
   {
-    id: "worldclock" as const,
+    id: "worldclock",
     name: "Weltzeituhr",
     description: "Zeitzonen im Überblick",
-    path: "#world-clock",
-    keywords: ["weltzeit", "uhr", "zeitzonen", "global"] as const,
     icon: Globe,
+    keywords: ["weltzeit", "uhr", "zeitzonen", "global"],
     component: WorldClock,
-    supportsRunning: false as const,
+    persistent: false,
   },
   {
-    id: "timer" as const,
-    name: "Timer",
-    description: "Ein einfacher Timer zum Herunterzählen",
-    path: "#timer",
-    keywords: ["timer", "countdown", "alarm", "zeit"] as const,
-    icon: TimerIcon,
-    component: Timer,
-    supportsRunning: true as const,
-  },
-  {
-    id: "stopwatch" as const,
+    id: "stopwatch",
     name: "Stoppuhr",
     description: "Eine Stoppuhr zum Zeitmessen",
-    path: "#stopwatch",
-    keywords: ["stoppuhr", "zeit", "messen", "runden"] as const,
-    icon: StopwatchIcon,
+    icon: StopCircle,
+    keywords: ["stoppuhr", "zeit", "messen", "runden"],
     component: Stopwatch,
-    supportsRunning: true as const,
+    persistent: true,
   },
   {
-    id: "todo" as const,
+    id: "timer",
+    name: "Timer",
+    description: "Ein einfacher Timer zum Herunterzählen",
+    icon: TimerIcon,
+    keywords: ["timer", "countdown", "alarm", "zeit"],
+    component: Timer,
+    persistent: true,
+  },
+  {
+    id: "todo",
     name: "Todo",
     description: "Eine einfache Todo-Liste",
-    path: "#todo",
+    icon: ListTodo,
     keywords: [
       "todo",
       "aufgaben",
@@ -76,68 +61,33 @@ const PROGRAM_CONFIGS = [
       "organisation",
       "planen",
       "notizen",
-    ] as const,
-    icon: ListTodo,
+    ],
     component: Todo,
-    supportsRunning: true as const,
-    checkInitialRunning,
+    persistent: true,
+    onPluginPreMount: onPluginPreMount,
   },
-] as const;
+];
 
-// Typ für ein einzelnes Programm aus dem Array
-export type ProgramConfig = (typeof PROGRAM_CONFIGS)[number];
+// Plugin-IDs
+export type PluginId = (typeof PLUGINS)[number]["id"];
 
-// Export der Programme mit korrektem Typ
-export const PROGRAMS: readonly ProgramConfig[] = PROGRAM_CONFIGS;
+// Plugin-Suche mit Fuse.js
+import Fuse from "fuse.js";
 
-// ProgramId aus dem Array ableiten
-export type ProgramId = ProgramConfig["id"];
-
-// Fuse.js Instanz für Fuzzy-Suche
-const fuse = new Fuse(PROGRAMS, {
-  keys: [
-    { name: "id", weight: 2 }, // ID soll hoch gewichtet sein
-    { name: "name", weight: 2 }, // Name ebenfalls hoch gewichtet
-    { name: "keywords", weight: 1 },
-    { name: "description", weight: 0.5 },
-  ],
-  threshold: 0.3, // eher streng, damit Ergebnisse genauer sind
+const fuseOptions = {
+  keys: ["name", "description", "keywords"],
+  threshold: 0.3,
   distance: 100,
-  location: 0, // bevorzugt Matches am Wortanfang
-  ignoreLocation: false, // Wortanfang wird stärker gewichtet
-  includeScore: true,
-  minMatchCharLength: 1, // Mindestens 1 Zeichen für Fuzzy
-});
+};
 
-/**
- * Kombinierte Suche:
- * 1) Prefix-Matching (höchste Priorität)
- * 2) Fuzzy-Matching über Fuse (ergänzend)
- * 3) Zusammenführen & Duplikate entfernen
- */
-export function searchPrograms(query: string): ProgramConfig[] {
-  const searchTerm = query.toLowerCase().trim();
-  if (!searchTerm) {
-    return [];
-  }
+const fuse = new Fuse(PLUGINS, fuseOptions);
 
-  // 1) Prefix-Matches (id, name oder keyword beginnt mit query)
-  const prefixMatches = PROGRAMS.filter(
-    (program) =>
-      program.id.toLowerCase().startsWith(searchTerm) ||
-      program.name.toLowerCase().startsWith(searchTerm) ||
-      program.keywords.some((k) => k.toLowerCase().startsWith(searchTerm))
-  );
+export function searchPlugins(query: string): PluginConfig[] {
+  if (!query.trim()) return [];
+  return fuse.search(query).map((result) => result.item);
+}
 
-  // 2) Fuzzy-Suche
-  // Wir lassen Fuse sortieren und liefern es dann in Reihenfolge zurück
-  const fuseResults = fuse.search(searchTerm);
-  const fuzzyMatches = fuseResults.map((r) => r.item);
-
-  // 3) Zusammenführen: Prefix-Ergebnisse zuerst, dann Fuzzy
-  //    Per Set Duplikate entfernen (Set behält Reihenfolge des ersten Auftretens)
-  const combined = [...prefixMatches, ...fuzzyMatches];
-  const unique = Array.from(new Set(combined));
-
-  return unique;
+// Plugin-Hilfsfunktionen
+export function findPluginById(id: string): PluginConfig | undefined {
+  return PLUGINS.find((plugin) => plugin.id === id);
 }

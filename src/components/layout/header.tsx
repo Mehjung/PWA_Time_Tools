@@ -4,27 +4,28 @@ import { Button } from "@/components/ui/button";
 import { AppWindow, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
 import {
-  type ProgramConfig,
-  type ProgramId,
-  searchPrograms,
+  PluginConfig,
+  type PluginId,
+  searchPlugins,
 } from "@/lib/program-config";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 
 interface HeaderProps {
-  onProgramsClick: () => void;
-  activePrograms: ProgramId[];
-  onProgramSelect: (programId: ProgramId) => void;
+  onPluginsClick: () => void;
+  activePlugins: PluginId[];
+  onPluginSelect: (pluginId: PluginId) => void;
 }
 
 export const Header = ({
-  onProgramsClick,
-  activePrograms,
-  onProgramSelect,
+  onPluginsClick,
+  activePlugins,
+  onPluginSelect,
 }: HeaderProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState<ProgramConfig[]>([]);
+  const [suggestions, setSuggestions] = useState<PluginConfig[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,23 +39,22 @@ export const Header = ({
       setSelectedIndex(-1);
       return;
     }
-    const results = searchPrograms(value);
+    const results = searchPlugins(value);
     setSuggestions(results);
     setShowSuggestions(results.length > 0);
     setSelectedIndex(results.length > 0 ? 0 : -1);
   }, []);
 
-  const handleProgramClick = useCallback(
-    (program: ProgramConfig) => {
-      if (!program) {
-        console.log("DEBUG: Program is undefined");
+  const handlePluginClick = useCallback(
+    (plugin: PluginConfig) => {
+      if (!plugin) {
+        console.log("DEBUG: Plugin is undefined");
         return;
       }
 
-      console.log("DEBUG: Handling program click", {
-        programId: program.id,
-        programName: program.name,
-        supportsRunning: program.supportsRunning,
+      console.log("DEBUG: Handling plugin click", {
+        pluginId: plugin.id,
+        pluginName: plugin.name,
       });
 
       // Erst alle States zurücksetzen
@@ -64,70 +64,43 @@ export const Header = ({
       setSelectedIndex(-1);
       inputRef.current?.blur();
 
-      // Dann das Programm aktivieren über die neue Funktion
-      console.log("DEBUG: Calling onProgramSelect with:", program.id);
-      onProgramSelect(program.id);
+      // Dann das Plugin aktivieren über die neue Funktion
+      console.log("DEBUG: Calling onPluginSelect with:", plugin.id);
+      onPluginSelect(plugin.id);
     },
-    [onProgramSelect]
+    [onPluginSelect]
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (!showSuggestions && e.key === "Enter" && searchTerm.trim()) {
-        const results = searchPrograms(searchTerm);
-        console.log("DEBUG: Search results on Enter", {
-          searchTerm,
-          resultsCount: results.length,
-          firstResult: results[0],
-        });
-        if (results.length > 0) {
-          e.preventDefault();
-          handleProgramClick(results[0]);
-          return;
-        }
-      }
+    (event: React.KeyboardEvent) => {
+      if (!showSuggestions) return;
 
-      if (!showSuggestions || suggestions.length === 0) return;
-
-      switch (e.key) {
+      switch (event.key) {
         case "ArrowDown":
-          e.preventDefault();
+          event.preventDefault();
           setSelectedIndex((prev) =>
             prev < suggestions.length - 1 ? prev + 1 : prev
           );
           break;
         case "ArrowUp":
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+          event.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
           break;
         case "Enter":
-          e.preventDefault();
-          console.log("DEBUG: Enter pressed with suggestions", {
-            selectedIndex,
-            suggestionsCount: suggestions.length,
-            selectedProgram: suggestions[selectedIndex],
-          });
-          if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            handleProgramClick(suggestions[selectedIndex]);
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+            handlePluginClick(suggestions[selectedIndex]);
           }
           break;
         case "Escape":
-          e.preventDefault();
+          event.preventDefault();
           setShowSuggestions(false);
           setSelectedIndex(-1);
-          setSuggestions([]);
-          setSearchTerm("");
           inputRef.current?.blur();
           break;
       }
     },
-    [
-      showSuggestions,
-      searchTerm,
-      suggestions,
-      selectedIndex,
-      handleProgramClick,
-    ]
+    [showSuggestions, suggestions, selectedIndex, handlePluginClick]
   );
 
   useEffect(() => {
@@ -153,19 +126,19 @@ export const Header = ({
           <Button
             variant="ghost"
             className="flex items-center gap-2 h-10 px-3 hover:bg-accent/50"
-            onClick={onProgramsClick}
-            aria-label="Öffne Programme"
+            onClick={onPluginsClick}
+            aria-label="Öffne Plugins"
           >
             <AppWindow className="h-5 w-5" aria-hidden="true" />
             <span className="text-lg font-semibold whitespace-nowrap">
               Time Tools
             </span>
-            {activePrograms.length > 0 && (
+            {activePlugins.length > 0 && (
               <Badge
                 variant="secondary"
                 className="ml-2 whitespace-nowrap px-2 py-0 h-6 inline-flex items-center"
               >
-                {activePrograms.length} Aktiv
+                {activePlugins.length} Aktiv
               </Badge>
             )}
           </Button>
@@ -177,7 +150,7 @@ export const Header = ({
               <Input
                 ref={inputRef}
                 type="search"
-                placeholder="Programme durchsuchen..."
+                placeholder="Plugins durchsuchen..."
                 className="w-full bg-muted/50 pl-10 rounded-full h-10 cursor-text select-none focus:cursor-text"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -191,7 +164,7 @@ export const Header = ({
                   }
                 }}
                 onKeyDown={handleKeyDown}
-                aria-label="Programme durchsuchen"
+                aria-label="Plugins durchsuchen"
                 aria-controls="search-suggestions"
                 aria-activedescendant={
                   showSuggestions && selectedIndex >= 0
@@ -211,25 +184,25 @@ export const Header = ({
                   role="listbox"
                   aria-label="Suchvorschläge"
                 >
-                  {suggestions.map((program, index) => (
+                  {suggestions.map((plugin, index) => (
                     <div
-                      key={program.id}
-                      id={`suggestion-${program.id}`}
+                      key={plugin.id}
+                      id={`suggestion-${plugin.id}`}
                       className={cn(
                         "px-4 py-2 cursor-pointer transition-colors flex items-center justify-between",
                         index === selectedIndex
                           ? "bg-accent"
                           : "hover:bg-accent/50"
                       )}
-                      onClick={() => handleProgramClick(program)}
+                      onClick={() => handlePluginClick(plugin)}
                       onMouseEnter={() => setSelectedIndex(index)}
                       role="option"
                       aria-selected={index === selectedIndex}
                     >
                       <div className="flex-1">
-                        <div className="font-medium">{program.name}</div>
+                        <div className="font-medium">{plugin.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {program.description}
+                          {plugin.description}
                         </div>
                       </div>
                     </div>

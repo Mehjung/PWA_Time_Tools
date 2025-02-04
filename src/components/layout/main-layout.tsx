@@ -1,90 +1,71 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Header } from "./header";
 import { ProgramCard } from "../program-card";
-import {
-  PROGRAMS,
-  type ProgramId,
-  type RunnableProgram,
-} from "@/lib/program-config";
+import { PLUGINS, type PluginId } from "@/lib/program-config";
 import { useProgramStore } from "@/stores/program-store";
+import { useShallow } from "zustand/react/shallow";
+import withPluginRef, {
+  createPluginFunctions,
+  PluginExposedAPI,
+  PluginProps,
+} from "@/components/hoc/with-plugin-ref";
+import { ComponentType } from "react";
 
 export const MainLayout = () => {
   const [showPrograms, setShowPrograms] = useState(false);
-  const { activeProgram, runningPrograms, setActiveProgram } =
-    useProgramStore();
+  const [clientActivePlugins, setClientActivePlugins] = useState<PluginId[]>(
+    []
+  );
+  const { activeProgram, setActiveProgram } = useProgramStore();
+
+  // Ref für den Zugriff auf das Plugin-API der aktiven Komponente
+  const programRef = useRef<PluginExposedAPI | null>(null);
+
+  const runningPrograms = useProgramStore(
+    useShallow((state) => state.runningPrograms)
+  );
+
+  // Client-seitige Berechnung der aktiven Plugins
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const activePlugins = PLUGINS.filter(
+      (plugin) =>
+        runningPrograms.includes(plugin.id) ||
+        (plugin.onPluginPreMount?.() ?? false)
+    ).map((p) => p.id);
+
+    setClientActivePlugins(activePlugins);
+  }, [runningPrograms]);
+
   const activeConfig = activeProgram
-    ? PROGRAMS.find((p) => p.id === activeProgram)
+    ? PLUGINS.find((p) => p.id === activeProgram)
     : null;
 
-  // Memoisiere die onRunningChange-Funktion
-  const onRunningChange = useCallback(
-    (isRunning: boolean) => {
-      if (!activeConfig?.supportsRunning) return;
-      console.log("DEBUG: MainLayout onRunningChange", {
-        programId: activeConfig.id,
-        isRunning,
-        currentRunningPrograms: runningPrograms,
-      });
-      useProgramStore.getState().getRunningCallback(activeConfig.id)(isRunning);
-    },
-    [activeConfig?.id, activeConfig?.supportsRunning, runningPrograms]
+  // Factory für Plugin-Funktionen
+  const createProgramPluginFunctions = useCallback(
+    (instanceId: string) => createPluginFunctions(instanceId),
+    []
   );
 
-  // Initialer Running-State Check für alle Programme
-  useEffect(() => {
-    PROGRAMS.forEach((program) => {
-      if (program.supportsRunning) {
-        const runnableProgram = program as RunnableProgram;
-        if (typeof runnableProgram.checkInitialRunning === "function") {
-          console.log(
-            "DEBUG: MainLayout initial running check for:",
-            program.id
-          );
-          const isRunning = runnableProgram.checkInitialRunning();
-          if (isRunning) {
-            console.log(
-              "DEBUG: MainLayout setting initial running state for:",
-              program.id
-            );
-            useProgramStore.getState().getRunningCallback(program.id)(true);
-          }
-        }
-      }
-    });
-  }, []); // Nur beim Mounting ausführen
-
-  // Funktion zum Aktivieren eines Programms und Schließen der Programmauswahl
   const handleProgramActivation = useCallback(
-    (programId: ProgramId) => {
-      console.log("DEBUG: MainLayout handleProgramActivation", {
-        programId,
-        currentShowPrograms: showPrograms,
-      });
-
+    (id: PluginId) => {
+      setActiveProgram(id);
       setShowPrograms(false);
-      setActiveProgram(programId);
     },
-    [setShowPrograms, setActiveProgram, showPrograms]
+    [setActiveProgram]
   );
 
-  // Diese Funktion dem Header übergeben
   const handleHeaderProgramSelect = useCallback(
-    (programId: ProgramId) => {
-      handleProgramActivation(programId);
+    (id: PluginId) => {
+      setActiveProgram(id);
     },
-    [handleProgramActivation]
+    [setActiveProgram]
   );
 
   const renderContent = () => {
-    console.log("DEBUG: MainLayout renderContent", {
-      activeProgram,
-      showPrograms,
-      activeConfig: activeConfig?.id,
-    });
-
-    // Wenn kein Programm aktiv ist und keine Programme angezeigt werden -> Willkommensseite
     if (!activeProgram && !showPrograms) {
       return (
         <div className="flex items-center justify-center min-h-[calc(100vh-16rem)]">
@@ -102,61 +83,58 @@ export const MainLayout = () => {
       );
     }
 
-    // Programme anzeigen
-    if (showPrograms) {
-      return (
-        <div className="h-full flex flex-col">
-          <div className="flex-1 flex items-start justify-center pt-16 pb-8">
-            <div className="max-w-sm mx-auto w-full px-4">
-              <div
-                className="grid grid-cols-1 gap-4 mt-8"
-                role="menu"
-                aria-label="Programme"
-              >
-                {PROGRAMS.map((program) => (
-                  <ProgramCard
-                    key={program.id}
-                    title={program.name}
-                    description={program.description}
-                    icon={program.icon}
-                    isActive={program.id === activeProgram}
-                    isRunning={runningPrograms.includes(program.id)}
-                    onClick={() => {
-                      handleProgramActivation(program.id);
-                    }}
-                    role="menuitem"
-                    aria-current={program.id === activeProgram}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Aktives Programm anzeigen
     if (!activeConfig) return null;
-    return activeConfig.supportsRunning ? (
-      <activeConfig.component onRunningChange={onRunningChange} />
-    ) : (
-      <activeConfig.component />
+
+    const WrappedComponent = withPluginRef(
+      activeConfig.component as unknown as ComponentType<
+        PluginProps & PluginExposedAPI
+      >,
+      { persistent: activeConfig?.persistent, componentId: activeConfig?.id },
+      createProgramPluginFunctions
     );
+
+    return <WrappedComponent ref={programRef} />;
   };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <Header
-          onProgramsClick={() => setShowPrograms((prev) => !prev)}
-          activePrograms={runningPrograms}
-          onProgramSelect={handleHeaderProgramSelect}
+          onPluginsClick={() => setShowPrograms((prev) => !prev)}
+          activePlugins={clientActivePlugins}
+          onPluginSelect={handleHeaderProgramSelect}
         />
       </div>
 
-      <main className="container mx-auto px-4 py-6" role="main">
-        <div className="bg-card rounded-xl shadow-sm min-h-[calc(100vh-8rem)]">
-          {renderContent()}
+      <main className="container mx-auto p-4">
+        <div className="h-full flex flex-col">
+          {showPrograms ? (
+            <div className="flex-1 flex items-start justify-center pt-16 pb-8">
+              <div className="max-w-sm mx-auto w-full px-4">
+                <div
+                  className="grid grid-cols-1 gap-4 mt-8"
+                  role="menu"
+                  aria-label="Programme"
+                >
+                  {PLUGINS.map((plugin) => (
+                    <ProgramCard
+                      key={plugin.id}
+                      title={plugin.name}
+                      description={plugin.description}
+                      icon={plugin.icon}
+                      isActive={plugin.id === activeProgram}
+                      isRunning={clientActivePlugins.includes(plugin.id)}
+                      onClick={() => handleProgramActivation(plugin.id)}
+                      role="menuitem"
+                      aria-current={plugin.id === activeProgram}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            renderContent()
+          )}
         </div>
       </main>
     </div>

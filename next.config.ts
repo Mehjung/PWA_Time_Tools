@@ -13,6 +13,10 @@ const nextConfig = {
     ignoreDuringBuilds: false,
     dirs: ["src"],
   },
+  paths: {
+    "@/*": ["./src/*"],
+    "@components/*": ["./src/components/*"],
+  },
 };
 
 export default nextConfig;
