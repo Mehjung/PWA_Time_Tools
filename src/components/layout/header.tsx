@@ -120,7 +120,7 @@ export const Header = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="relative h-16">
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
           <Button

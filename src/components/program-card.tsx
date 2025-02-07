@@ -29,7 +29,7 @@ export function ProgramCard({
     <Card
       className={cn(
         "w-full min-h-[120px] transition-all duration-300 cursor-pointer", // Feste Mindesthöhe
-        "border bg-card hover:bg-card/90 shadow-sm",
+        "border bg-card hover:bg-card/90 shadow-xs",
         "hover:shadow-lg group relative overflow-hidden",
         "ring-1 ring-border/20 hover:ring-border/30",
         isActive && "ring-2 ring-primary/60 bg-primary/5 shadow-md",
@@ -40,7 +40,7 @@ export function ProgramCard({
       aria-current={isActive}
       {...props}
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <CardContent className="flex items-start gap-4 p-4 h-full">
         {" "}

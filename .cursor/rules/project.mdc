@@ -1,0 +1,54 @@
+---
+description: Implement a next js spa, wit sub modules (as plugins) and central architecture which provides feature and an infrastructure to the modules
+globs: 
+---
+# PROJECT OVERVIEW
+
+- Create SPA page, with plugin (Sub program ) support
+- The Code will run as a static html page lately hosted on github (no server side renderiung)
+- this page also support pwa (progressive web app)
+- the module configuration ist stated in program-config file
+  it defines description and which functions/states from the spa are used and supported
+- the main engine is the hoc with-plugin-ref with a global store which covers
+  the plugins and supports them with a host function/state system, which can used by the plugins loseley
+- image the architecture like operating system (in a kind of a win api for apps)
+
+# TECH STACK
+
+next.js 15+
+shadcn
+pwa app (next module)
+zustand (react lib)
+fuse
+typescript
+
+# TypeScript Usage
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+
+# UI and Styling
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS;
+
+# Performance Optimization
+- Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+
+# CURRENT FILE STRUCTURE
+
+tree -L 4 -a -I 'node_modules|.git|**pycache**|.DS_Store|.pytest_cache|.vscode'
+
+# GITHUB PUSH PROCESS
+
+git add .
+git commit -m Message
+git push origin main
+
+# IMPORTANT
+
+- repeat the most important instructions
+- heavily rely on the ai rules when creating code
+
+# OTHER CONTEXT
+
+- Ensure that the application is maintainable, concise, and follows next.js community guidelines for code readability.
+
