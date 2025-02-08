@@ -7,7 +7,7 @@ export interface PluginState {
   // Weitere Felder können hier ergänzt werden.
 }
 
-interface PluginStore {
+export interface PluginStore {
   data: Record<string, PluginState>;
   setPluginState: (pluginKey: string, newState: Partial<PluginState>) => void;
   getPluginState: (pluginKey: string) => PluginState | undefined;

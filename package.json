@@ -37,11 +37,20 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "^19.0.0-beta-714736e-20250131",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
+    "eslint-plugin-react-compiler": "^19.0.0-beta-714736e-20250131",
     "postcss": "^8",
     "sharp": "^0.33.5",
     "tailwindcss": "^4.0.4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "ajv": "^8.17.1",
+    "whatwg-url": "^14.1.0"
+  },
+  "resolutions": {
+    "whatwg-url": "14.1.0"
   }
 }

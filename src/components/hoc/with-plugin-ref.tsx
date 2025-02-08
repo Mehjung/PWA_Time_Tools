@@ -2,9 +2,8 @@
 
 // withPluginRef.tsx
 import React, { forwardRef, useImperativeHandle, useEffect } from "react";
-import usePluginStore from "../../stores/plugin-store";
+import usePluginStore, { PluginStore } from "../../stores/plugin-store";
 import { usePluginDataFromStore } from "../../hooks/usePluginData";
-import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 interface PluginConfig {
@@ -135,11 +134,10 @@ function withPluginRef<
 
     const pluginFunctions = createPluginFunctionsFactory(componentId);
 
-    // best practice for rerendering of the component
-    useStore(
-      usePluginStore,
-      useShallow((state) => state.data[componentId]) // Tiefenvergleich für das Plugin-Objekt
+    const shallowSelector = useShallow(
+      (state: PluginStore) => state.data[componentId]
     );
+    usePluginStore(shallowSelector);
 
     // never add pluginFunctions to cleanup cause of exhausting rerendering
     useEffect(() => {

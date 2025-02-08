@@ -14,6 +14,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    reactCompiler: true,
+  },
 };
 
 export default withSerwist(nextConfig);
